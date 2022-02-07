@@ -18,7 +18,7 @@ branch = os.environ.get('BRANCH', 'master')
 sparse = os.environ.get('SPARSE', 'false') == 'true'
 
 dataset = {}
-base = "/filelisting/entities"
+base = "/filelisting"
 git_cloned_dir = "/data/git_clone/%s" % branch
 
 app = Flask(__name__)
@@ -30,7 +30,7 @@ def root():
     return Response(status=200, response="I am Groot!")
 
 
-@app.route('/filelisting/entities', methods=['GET'])
+@app.route('/filelisting', methods=['GET'])
 def get_entities():
     """
     Returns a JSON array containing all entities in the git repository (except files in .git).
@@ -48,7 +48,7 @@ def get_entities():
     return Response(json.dumps(dataset))
 
 
-@app.route('/filelisting/entities/<path:path>', methods=['GET'])
+@app.route('/filelisting/<path:path>', methods=['GET'])
 def get_file_or_folder(path):
     """
     Fetch a specific file/folder and serve it as a JSON. If a folder is requested, a JSON array containing all

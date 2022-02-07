@@ -1,5 +1,5 @@
-# Github service
-A microservice that provides the contents of a file in a given Github repository. The 
+# GitHub service
+A microservice that provides the contents of a file in a given GitHub repository. The 
 contents are base64 encoded and served over HTTP. For private repositories, a deploy token 
 with sufficient access rights must be provided.
 
@@ -38,15 +38,15 @@ System:
 
 Pipe:
 
-When specifying the path to the file or folder in the Github repository, the path must be
-prefixed with ``/filelisting/entities``:
+Specify the path to the file or folder relative to the root of the repository in the `url`
+parameter. The path must be prepended with ``/filelisting``:
 ````
 ...
   {
   "source": {
     "type": "json",
     "system": "my-github-service",
-    "url": "/filelisting/entities/path/to/file"
+    "url": "/filelisting/path/to/file"
   },
 ...
 ````
