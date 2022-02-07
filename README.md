@@ -15,7 +15,7 @@ already exists. Default: true
 
 ``BRANCH`` - Which branch of the repository to retrieve files from. Default: master
 
-``SPARSE`` - If true, only the files specified with FILE_PATH are cloned, rather than cloning the
+``SPARSE`` - If true, only the specified files are retrieved, rather than cloning the
 entire repository. Default: false
 
 ## Example setup
