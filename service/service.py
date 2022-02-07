@@ -1,13 +1,13 @@
 from flask import Flask, Response
-import cherrypy
 import logging
-import paste.translogger
 import shutil
 import os
 import git
 import base64
 import mimetypes
 import json
+from sesamutils.flask import serve
+from sesamutils import sesam_logger
 
 envs = os.environ
 
@@ -18,11 +18,11 @@ branch = os.environ.get('BRANCH', 'master')
 sparse = os.environ.get('SPARSE', 'false') == 'true'
 
 dataset = {}
-base = "/entities"
+base = "/filelisting/entities"
 git_cloned_dir = "/data/git_clone/%s" % branch
 
 app = Flask(__name__)
-logger = logging.getLogger("datasource-service")
+logger = sesam_logger('github-service', app=app)
 
 
 @app.route('/', methods=['GET'])
@@ -30,7 +30,7 @@ def root():
     return Response(status=200, response="I am Groot!")
 
 
-@app.route('/entities', methods=['GET'])
+@app.route('/filelisting/entities', methods=['GET'])
 def get_entities():
     """
     Returns a JSON array containing all entities in the git repository (except files in .git).
@@ -48,7 +48,7 @@ def get_entities():
     return Response(json.dumps(dataset))
 
 
-@app.route('/entities/<path:path>', methods=['GET'])
+@app.route('/filelisting/entities/<path:path>', methods=['GET'])
 def get_file_or_folder(path):
     """
     Fetch a specific file/folder and serve it as a JSON. If a folder is requested, a JSON array containing all
@@ -60,13 +60,13 @@ def get_file_or_folder(path):
 
     paths = path.split("/")
 
-    # Checkout containing folder if input path is deeper than the root of the repo, or if file/folder does not exist
+    # Checkout appropriate path if file/folder does not exist
     if sparse:
         filesystem_path = os.path.join(git_cloned_dir, path)
-        if len(paths) > 1 or not os.path.isfile(filesystem_path):
+        if not os.path.isfile(filesystem_path):
             repo = git.Repo(git_cloned_dir)
             os.chdir(git_cloned_dir)
-            repo.git.sparse_checkout("set", paths[0])
+            repo.git.sparse_checkout("set", path)
             os.chdir(os.path.abspath(os.path.dirname(__file__)))   # return to service path
 
     build_dataset()   # update entities
@@ -153,32 +153,4 @@ def remove_if_exists(path):
 
 
 if __name__ == '__main__':
-    format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-
-    # Log to stdout, change to or add a (Rotating)FileHandler to log to a file
-    stdout_handler = logging.StreamHandler()
-    stdout_handler.setFormatter(logging.Formatter(format_string))
-    logger.addHandler(stdout_handler)
-
-    # Comment these two lines if you don't want access request logging
-    app.wsgi_app = paste.translogger.TransLogger(app.wsgi_app, logger_name=logger.name,
-                                                 setup_console_handler=False)
-    app.logger.addHandler(stdout_handler)
-
-    logger.propagate = False
-    logger.setLevel(logging.INFO)
-
-    cherrypy.tree.graft(app, '/')
-
-    # Set the configuration of the web server to production mode
-    cherrypy.config.update({
-        'environment': 'production',
-        'engine.autoreload_on': False,
-        'log.screen': True,
-        'server.socket_port': 5000,
-        'server.socket_host': '0.0.0.0'
-    })
-
-    # Start the CherryPy WSGI web server
-    cherrypy.engine.start()
-    cherrypy.engine.block()
+    serve(app)
