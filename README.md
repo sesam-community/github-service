@@ -21,4 +21,4 @@ entire repository. Default: false
 ## Example usage
 With the service running locally, we can perform a GET request with the path to the desired file, prefixed with "filelisting/entities/":
 
-``localhost:5000/filelisting/entities/path/to/file``
+``curl localhost:5000/filelisting/entities/path/to/file``
