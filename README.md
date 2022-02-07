@@ -18,7 +18,35 @@ already exists. Default: true
 ``SPARSE`` - If true, only the files specified with FILE_PATH are cloned, rather than cloning the
 entire repository. Default: false
 
-## Example usage
-With the service running locally, we can perform a GET request with the path to the desired file, prefixed with "filelisting/entities/":
+## Example setup
 
-``curl localhost:5000/filelisting/entities/path/to/file``
+System:
+````
+{
+  "_id": "my-github-service",
+  "type": "system:microservice",
+  "docker": {
+    "environment": {
+      "DEPLOY_TOKEN": "$SECRET(deploy-token)",
+      "GIT_REPO": "git@github.com:my_community/my_repo.git",
+    },
+    "image": "sesamcommunity/github-service:<version>",
+    "port": 5000
+  }
+}
+````
+
+Pipe:
+
+When specifying the path to the file or folder in the Github repository, the path must be
+prefixed with ``/filelisting/entities``:
+````
+...
+  {
+  "source": {
+    "type": "json",
+    "system": "my-github-service",
+    "url": "/filelisting/entities/path/to/file"
+  },
+...
+````
