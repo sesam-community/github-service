@@ -39,7 +39,11 @@ System:
 Pipe:
 
 Specify the path to the file or folder relative to the root of the repository in the `url`
-parameter. The path must be prepended with ``/filelisting``:
+parameter. The path must be prepended with ``/filelisting``.
+
+**WARNING**: If your file path contains spaces, you MUST
+replace them with the URL-encoded form of a space, '%20'. For example, the path ``/filelisting/file with spaces.txt``
+should be ``/filelisting/file%20with%20spaces.txt`` when specifying the `url` parameter.
 ````
 ...
   {

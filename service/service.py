@@ -36,16 +36,22 @@ def get_entities():
     Returns a JSON array containing all entities in the git repository (except files in .git).
     """
 
-    if not os.path.exists(git_cloned_dir):
-        clone_repo()
-    elif refresh:
-        pull_repo()
+    logger.info("Got request to retrieve all files in repo")
+    try:
+        if not os.path.exists(git_cloned_dir):
+            clone_repo()
+        elif refresh:
+            pull_repo()
 
-    # Build dataset if it is empty, ignoring .git folder
-    if not dataset or refresh:
-        build_dataset()
+        # Build dataset if it is empty, ignoring .git folder
+        if not dataset or refresh:
+            build_dataset()
 
-    return Response(json.dumps(dataset))
+        return Response(json.dumps(dataset))
+
+    except BaseException as e:
+        logger.warning(f"Unable to retrieve files due to an exception:\n%s" % e)
+        raise e
 
 
 @app.route('/filelisting/<path:path>', methods=['GET'])
@@ -55,40 +61,50 @@ def get_file_or_folder(path):
     entities in that folder is returned.
     """
 
-    if not os.path.exists(git_cloned_dir):
-        clone_repo()
+    logger.info("Got request to retrieve file '%s'" % path)
+    try:
+        if not os.path.exists(git_cloned_dir):
+            clone_repo()
 
-    paths = path.split("/")
+        paths = path.split("/")
 
-    # Checkout appropriate path if file/folder does not exist
-    if sparse:
-        filesystem_path = os.path.join(git_cloned_dir, path)
-        if not os.path.isfile(filesystem_path):
-            repo = git.Repo(git_cloned_dir)
-            os.chdir(git_cloned_dir)
-            repo.git.sparse_checkout("set", path)
-            os.chdir(os.path.abspath(os.path.dirname(__file__)))   # return to service path
+        # Checkout appropriate path if file/folder does not exist
+        if sparse:
+            filesystem_path = os.path.join(git_cloned_dir, path)
+            if not os.path.isfile(filesystem_path):
+                repo = git.Repo(git_cloned_dir)
+                os.chdir(git_cloned_dir)
+                repo.git.sparse_checkout("set", path)
+                os.chdir(os.path.abspath(os.path.dirname(__file__)))   # return to service path
 
-    build_dataset()   # update entities
+        build_dataset()   # update entities
 
-    # Determine parent folder containing the requested file
-    if len(paths) > 1:
-        parent_folder = os.path.join(base, '/'.join(paths[:-1]))
-    else:  # file is in the repository root
-        parent_folder = base
+        # Determine parent folder containing the requested file
+        if len(paths) > 1:
+            parent_folder = os.path.join(base, '/'.join(paths[:-1]))
+        else:  # file is in the repository root
+            parent_folder = base
 
-    # Check first if the requested file is a folder. The keys in 'dataset' all represent folders in the repository.
-    if os.path.join(base, path) in list(dataset.keys()):
-        entity = dataset[os.path.join(base, path)]
-    else:
-        # If it is not a folder, find the containing folder 'subdict' and then look for the entity there
-        subdict = dataset[os.path.join(base, parent_folder)]
-        try:
-            entity = next(item for item in subdict if item["_id"] == '/' + path)
-        except StopIteration:
-            return Response(status=404, response="Unable to retrieve entity with _id '%s'" % ('/' + path))
+        # Check first if the requested file is a folder. The keys in 'dataset' all represent folders in the repository.
+        if os.path.join(base, path) in list(dataset.keys()):
+            entity = dataset[os.path.join(base, path)]
+        else:
+            # If it is not a folder, find the containing folder 'subdict' and then look for the entity there
+            subdict = dataset[os.path.join(base, parent_folder)]
+            try:
+                entity = next(item for item in subdict if item["_id"] == '/' + path)
+                logger.info("Retrieved file '%s' with content type %s" % (path, entity["content-type"]))
+            except StopIteration:
+                return Response(status=404, response="Unable to retrieve entity with _id '%s'" % ('/' + path))
 
-    return Response(json.dumps(entity))
+        if not isinstance(entity, list):
+            entity = [entity]
+
+        return Response(json.dumps(entity), mimetype='application/json')
+
+    except BaseException as e:
+        logger.warning(f"Unable to retrieve file or file contents due to an exception:\n%s" % e)
+        raise e
 
 
 def build_dataset():
@@ -126,7 +142,7 @@ def clone_repo():
     os.chmod("id_deployment_key", 0o600)
 
     ssh_cmd = 'ssh -o "StrictHostKeyChecking=no" -i id_deployment_key'
-    logging.info('cloning %s', git_repo)
+    logging.info('Cloning %s', git_repo)
 
     remove_if_exists(git_cloned_dir)
 
@@ -140,7 +156,7 @@ def clone_repo():
 
 
 def pull_repo():
-    logging.info('pulling %s', git_repo)
+    logging.info('Pulling %s', git_repo)
     repo = git.Repo(git_cloned_dir)
     o = repo.remotes.origin
     o.pull()
