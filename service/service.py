@@ -1,5 +1,4 @@
 from flask import Flask, Response
-import logging
 import shutil
 import os
 import git
@@ -65,6 +64,8 @@ def get_file_or_folder(path):
     try:
         if not os.path.exists(git_cloned_dir):
             clone_repo()
+        elif refresh:
+            pull_repo()
 
         paths = path.split("/")
 
@@ -142,7 +143,7 @@ def clone_repo():
     os.chmod("id_deployment_key", 0o600)
 
     ssh_cmd = 'ssh -o "StrictHostKeyChecking=no" -i id_deployment_key'
-    logging.info('Cloning %s', git_repo)
+    logger.info(f"Cloning branch '{branch}' of Git repo '{git_repo}'")
 
     remove_if_exists(git_cloned_dir)
 
@@ -156,7 +157,7 @@ def clone_repo():
 
 
 def pull_repo():
-    logging.info('Pulling %s', git_repo)
+    logger.info(f"Pulling newest version of branch '{branch}' of Git repo '{git_repo}'")
     repo = git.Repo(git_cloned_dir)
     o = repo.remotes.origin
     o.pull()
