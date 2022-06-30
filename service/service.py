@@ -19,7 +19,7 @@ sparse = os.environ.get('SPARSE', 'false') == 'true'
 
 dataset = {}
 base = "/filelisting"
-git_cloned_dir = "/tmp/git_clone/%s" % branch
+git_cloned_dir = "/data/git_clone/%s" % branch
 
 app = Flask(__name__)
 logger = sesam_logger('github-service', app=app)
