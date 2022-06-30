@@ -19,7 +19,11 @@ sparse = os.environ.get('SPARSE', 'false') == 'true'
 
 dataset = {}
 base = "/filelisting"
-git_cloned_dir = "/data/git_clone/%s" % branch
+
+if os.environ.get('RUNNING_LOCALLY', 'false') == 'true':
+    git_cloned_dir = "/tmp/git_clone/%s" % branch
+else:
+    git_cloned_dir = "/data/git_clone/%s" % branch
 
 app = Flask(__name__)
 logger = sesam_logger('github-service', app=app)
@@ -147,8 +151,9 @@ def clone_repo():
     logger.info(f"Cloning branch '{branch}' of Git repo '{git_repo}'")
 
     remove_if_exists(git_cloned_dir)
+    repo = git.Repo(git_cloned_dir)
 
-    with Git().custom_environment(GIT_SSH_COMMAND=ssh_cmd):
+    with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
         repo = Repo.clone_from(git_repo, git_cloned_dir, branch=branch, sparse=sparse)
 
 
@@ -161,7 +166,9 @@ def pull_repo():
     ssh_cmd = 'ssh -o "StrictHostKeyChecking=no" -i id_deployment_key'
     logger.info(f"Pulling newest version of branch '{branch}' of Git repo '{git_repo}'")
 
-    with Git().custom_environment(GIT_SSH_COMMAND=ssh_cmd):
+    repo = git.Repo(git_cloned_dir)
+
+    with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
         repo = git.Repo(git_cloned_dir)
         repo.git.checkout(branch)
         o = repo.remotes.origin
