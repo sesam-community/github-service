@@ -151,10 +151,14 @@ def clone_repo():
     logger.info(f"Cloning branch '{branch}' of Git repo '{git_repo}'")
 
     remove_if_exists(git_cloned_dir)
-    repo = git.Repo(git_cloned_dir)
 
-    with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
-        repo = Repo.clone_from(git_repo, git_cloned_dir, branch=branch, sparse=sparse)
+    repo = git.Repo.clone_from(
+        git_repo,
+        git_cloned_dir,
+        sparse=sparse,
+        env=dict(GIT_SSH_COMMAND=ssh_cmd),
+        branch=branch
+    )
 
 
 def pull_repo():
@@ -169,7 +173,6 @@ def pull_repo():
     repo = git.Repo(git_cloned_dir)
 
     with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
-        repo = git.Repo(git_cloned_dir)
         repo.git.checkout(branch)
         o = repo.remotes.origin
         o.pull()
