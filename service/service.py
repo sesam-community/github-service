@@ -174,8 +174,7 @@ def pull_repo():
 
     with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
         repo.git.checkout(branch)
-        o = repo.remotes.origin
-        o.pull()
+        repo.git.pull()
 
 
 def remove_if_exists(path):
