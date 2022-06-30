@@ -2,6 +2,7 @@ from flask import Flask, Response
 import shutil
 import os
 import git
+from git import Git, Repo
 import base64
 import mimetypes
 import json
@@ -18,7 +19,7 @@ sparse = os.environ.get('SPARSE', 'false') == 'true'
 
 dataset = {}
 base = "/filelisting"
-git_cloned_dir = "/data/git_clone/%s" % branch
+git_cloned_dir = "/tmp/git_clone/%s" % branch
 
 app = Flask(__name__)
 logger = sesam_logger('github-service', app=app)
@@ -140,35 +141,31 @@ def clone_repo():
     if not os.path.exists('id_deployment_key'):
         with open("id_deployment_key", "w") as key_file:
             key_file.write(deploy_token)
-
-    os.chmod("id_deployment_key", 0o600)
+            os.chmod("id_deployment_key", 0o600)
 
     ssh_cmd = 'ssh -o "StrictHostKeyChecking=no" -i id_deployment_key'
     logger.info(f"Cloning branch '{branch}' of Git repo '{git_repo}'")
 
     remove_if_exists(git_cloned_dir)
 
-    repo = git.Repo.clone_from(
-        git_repo,
-        git_cloned_dir,
-        sparse=sparse,
-        env=dict(GIT_SSH_COMMAND=ssh_cmd),
-        branch=branch
-    )
+    with Git().custom_environment(GIT_SSH_COMMAND=ssh_cmd):
+        repo = Repo.clone_from(git_repo, git_cloned_dir, branch=branch, sparse=sparse)
 
 
 def pull_repo():
     if not os.path.exists('id_deployment_key'):
         with open("id_deployment_key", "w") as key_file:
             key_file.write(deploy_token)
-
-    logger.info(f"Pulling newest version of branch '{branch}' of Git repo '{git_repo}'")
-    repo = git.Repo(git_cloned_dir)
-    repo.git.checkout(branch)
-    o = repo.remotes.origin
+            os.chmod("id_deployment_key", 0o600)
 
     ssh_cmd = 'ssh -o "StrictHostKeyChecking=no" -i id_deployment_key'
-    o.pull(env=dict(GIT_SSH_COMMAND=ssh_cmd))
+    logger.info(f"Pulling newest version of branch '{branch}' of Git repo '{git_repo}'")
+
+    with Git().custom_environment(GIT_SSH_COMMAND=ssh_cmd):
+        repo = git.Repo(git_cloned_dir)
+        repo.git.checkout(branch)
+        o = repo.remotes.origin
+        o.pull()
 
 
 def remove_if_exists(path):
