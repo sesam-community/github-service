@@ -137,8 +137,9 @@ def build_dataset():
 
 
 def clone_repo():
-    with open("id_deployment_key", "w") as key_file:
-        key_file.write(deploy_token)
+    if not os.path.exists('id_deployment_key'):
+        with open("id_deployment_key", "w") as key_file:
+            key_file.write(deploy_token)
 
     os.chmod("id_deployment_key", 0o600)
 
@@ -157,10 +158,15 @@ def clone_repo():
 
 
 def pull_repo():
+    if not os.path.exists('id_deployment_key'):
+        with open("id_deployment_key", "w") as key_file:
+            key_file.write(deploy_token)
+
     logger.info(f"Pulling newest version of branch '{branch}' of Git repo '{git_repo}'")
     repo = git.Repo(git_cloned_dir)
-
+    repo.git.checkout(branch)
     o = repo.remotes.origin
+
     ssh_cmd = 'ssh -o "StrictHostKeyChecking=no" -i id_deployment_key'
     o.pull(env=dict(GIT_SSH_COMMAND=ssh_cmd))
 
