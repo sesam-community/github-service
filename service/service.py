@@ -159,8 +159,10 @@ def clone_repo():
 def pull_repo():
     logger.info(f"Pulling newest version of branch '{branch}' of Git repo '{git_repo}'")
     repo = git.Repo(git_cloned_dir)
+
     o = repo.remotes.origin
-    o.pull()
+    ssh_cmd = 'ssh -o "StrictHostKeyChecking=no" -i id_deployment_key'
+    o.pull(env=dict(GIT_SSH_COMMAND=ssh_cmd))
 
 
 def remove_if_exists(path):
