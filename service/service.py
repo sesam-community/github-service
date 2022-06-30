@@ -162,14 +162,8 @@ def clone_repo():
 
 
 def pull_repo():
-    ssh_cmd = 'ssh -o "StrictHostKeyChecking=no" -i id_deployment_key'
-    logger.info(f"Pulling newest version of branch '{branch}' of Git repo '{git_repo}'")
-
-    repo = git.Repo(git_cloned_dir)
-
-    with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
-        repo.git.checkout(branch)
-        repo.git.pull()
+    # the branch 'fix-pull' contains a different implementation for pulling but fails due to authentication issues
+    clone_repo()
 
 
 def remove_if_exists(path):
