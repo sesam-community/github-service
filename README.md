@@ -28,7 +28,7 @@ System:
   "docker": {
     "environment": {
       "DEPLOY_TOKEN": "$SECRET(deploy-token)",
-      "GIT_REPO": "git@github.com:my_community/my_repo.git",
+      "GIT_REPO": "git@github.com:my_community/my_repo.git"
     },
     "image": "sesamcommunity/github-service:<version>",
     "port": 5000
